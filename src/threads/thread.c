@@ -545,6 +545,16 @@ thread_schedule_tail (struct thread *prev)
     }
 }
 
+void thread_dormir_tiempo(int64_t ticks, int64_t actual, struct list *lista)
+{
+  struct thread *cur = thread_current();
+  cur -> sleep_time = ticks;
+  cur -> time_actual = actual;
+  list_push_back (lista, &cur->elem);
+  
+} //PRACTICA1
+  
+
 /* Schedules a new process.  At entry, interrupts must be off and
    the running process's state must have been changed from
    running to some other state.  This function finds another

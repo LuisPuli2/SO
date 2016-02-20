@@ -30,6 +30,8 @@ static void busy_wait (int64_t loops);
 static void real_time_sleep (int64_t num, int32_t denom);
 static void real_time_delay (int64_t num, int32_t denom);
 
+static struct list *lista; //PRACTICA1
+
 /* Sets up the timer to interrupt TIMER_FREQ times per second,
    and registers the corresponding interrupt. */
 void
@@ -37,6 +39,7 @@ timer_init (void)
 {
   pit_configure_channel (0, 2, TIMER_FREQ);
   intr_register_ext (0x20, timer_interrupt, "8254 Timer");
+  list_init(lista); //PRACTICA1
 }
 
 /* Calibrates loops_per_tick, used to implement brief delays. */
@@ -86,7 +89,7 @@ timer_elapsed (int64_t then)
 
 /* Sleeps for approximately TICKS timer ticks.  Interrupts must
    be turned on. */
-void
+/*void
 timer_sleep (int64_t ticks) 
 {
   int64_t start = timer_ticks ();
@@ -94,7 +97,18 @@ timer_sleep (int64_t ticks)
   ASSERT (intr_get_level () == INTR_ON);
   while (timer_elapsed (start) < ticks) 
     thread_yield ();
-}
+    }*/
+void
+timer_sleep (int64_t ticks)
+{
+  int64_t start = timer_ticks ();
+  ASSERT (intr_get_level () == INTR_ON);
+
+  thread_dormir_tiempo(ticks,start, lista);
+  thread_block();
+  
+  
+} //PRACTICA1
 
 /* Sleeps for approximately MS milliseconds.  Interrupts must be
    turned on. */
@@ -172,6 +186,27 @@ timer_interrupt (struct intr_frame *args UNUSED)
 {
   ticks++;
   thread_tick ();
+  /*
+    1. itero lista
+    2. Reviso que timer_start - timer_ticks >= sleep_time
+    3. libero o no libero.
+   */
+
+  struct list_elem *elem;
+  elem = list_begin(lista); 
+  while (elem != NULL)
+    {
+      struct thread *cur = *elem; //LOL-NO
+      if ((cur->sleep_time) >= timer_ticks() - (cur->time_actual))
+	{
+	  thread_unblock(cur);
+	}
+      else
+	{
+	  
+	}
+      elem = list_next(elem);
+    }
 }
 
 /* Returns true if LOOPS iterations waits for more than one timer
