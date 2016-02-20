@@ -39,7 +39,7 @@ timer_init (void)
 {
   pit_configure_channel (0, 2, TIMER_FREQ);
   intr_register_ext (0x20, timer_interrupt, "8254 Timer");
-  list_init(lista); //PRACTICA1
+  list_init(&lista); //PRACTICA1
 }
 
 /* Calibrates loops_per_tick, used to implement brief delays. */
@@ -103,10 +103,9 @@ timer_sleep (int64_t ticks)
 {
   int64_t start = timer_ticks ();
   ASSERT (intr_get_level () == INTR_ON);
-
-  thread_dormir_tiempo(ticks,start, lista);
-  thread_block();
   
+  thread_dormir_tiempo(ticks,start, lista); 
+  thread_block();  
   
 } //PRACTICA1
 
@@ -191,12 +190,12 @@ timer_interrupt (struct intr_frame *args UNUSED)
     2. Reviso que timer_start - timer_ticks >= sleep_time
     3. libero o no libero.
    */
-
   struct list_elem *elem;
-  elem = list_begin(lista); 
+  elem = list_begin(&lista);
   while (elem != NULL)
     {
-      struct thread *cur = *elem; //LOL-NO
+      struct thread *cur = list_entry(elem,struct thread,elem);
+      printf("%s\n",cur->name);
       if ((cur->sleep_time) >= timer_ticks() - (cur->time_actual))
 	{
 	  thread_unblock(cur);

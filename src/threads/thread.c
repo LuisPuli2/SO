@@ -548,9 +548,10 @@ thread_schedule_tail (struct thread *prev)
 void thread_dormir_tiempo(int64_t ticks, int64_t actual, struct list *lista)
 {
   struct thread *cur = thread_current();
+  printf("%s\n",cur->name);
   cur -> sleep_time = ticks;
   cur -> time_actual = actual;
-  list_push_back (lista, &cur->elem);
+  list_push_back (&lista, &cur->elem);
   
 } //PRACTICA1
   
