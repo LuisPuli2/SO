@@ -545,7 +545,7 @@ thread_schedule_tail (struct thread *prev)
     }
 }
 
-void thread_dormir_tiempo(int64_t ticks, int64_t actual, struct list *lista)
+/*void thread_dormir_tiempo(int64_t ticks, int64_t actual, struct list *lista)
 {
   struct thread *cur = thread_current();
   printf("%s\n",cur->name);
@@ -553,7 +553,7 @@ void thread_dormir_tiempo(int64_t ticks, int64_t actual, struct list *lista)
   cur -> time_actual = actual;
   list_push_back (&lista, &cur->elem);
   
-} //PRACTICA1
+} *///PRACTICA1
   
 
 /* Schedules a new process.  At entry, interrupts must be off and

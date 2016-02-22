@@ -83,8 +83,8 @@ typedef int tid_t;
 struct thread
   {
 
-    int64_t sleep_time; //PRACTICA1
-    int64_t time_actual; //PRACTICA1
+    int64_t por_dormir; //PRACTICA1
+    //int64_t time_actual; //PRACTICA1
     /* Owned by thread.c. */
     tid_t tid;                          /* Thread identifier. */
     enum thread_status status;          /* Thread state. */

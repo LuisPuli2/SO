@@ -30,7 +30,7 @@ static void busy_wait (int64_t loops);
 static void real_time_sleep (int64_t num, int32_t denom);
 static void real_time_delay (int64_t num, int32_t denom);
 
-static struct list *lista; //PRACTICA1
+struct list dormidos; //PRACTICA1
 
 /* Sets up the timer to interrupt TIMER_FREQ times per second,
    and registers the corresponding interrupt. */
@@ -39,7 +39,7 @@ timer_init (void)
 {
   pit_configure_channel (0, 2, TIMER_FREQ);
   intr_register_ext (0x20, timer_interrupt, "8254 Timer");
-  list_init(&lista); //PRACTICA1
+  list_init(&dormidos); //PRACTICA1
 }
 
 /* Calibrates loops_per_tick, used to implement brief delays. */
@@ -103,9 +103,12 @@ timer_sleep (int64_t ticks)
 {
   int64_t start = timer_ticks ();
   ASSERT (intr_get_level () == INTR_ON);
+  int old_level = intr_set_level(INTR_OFF);
+  list_push_back(&dormidos, &(thread_current()->elem));
+  (thread_current()->por_dormir) = ticks;
+  thread_block();
+  intr_set_level(old_level);
   
-  thread_dormir_tiempo(ticks,start, lista); 
-  thread_block();  
   
 } //PRACTICA1
 
@@ -190,21 +193,21 @@ timer_interrupt (struct intr_frame *args UNUSED)
     2. Reviso que timer_start - timer_ticks >= sleep_time
     3. libero o no libero.
    */
-  struct list_elem *elem;
-  elem = list_begin(&lista);
-  while (elem != NULL)
+  struct list_elem* nodo;  
+  for (nodo = list_begin(&dormidos); nodo != list_end(&dormidos); )
     {
-      struct thread *cur = list_entry(elem,struct thread,elem);
-      printf("%s\n",cur->name);
-      if ((cur->sleep_time) >= timer_ticks() - (cur->time_actual))
+      struct thread* actual = list_entry(nodo,struct thread,elem);
+      // printf("%s\n",actual->name);
+      if (actual->por_dormir == 0)
 	{
-	  thread_unblock(cur);
+	  nodo = list_remove(nodo);
+	  thread_unblock(actual);
 	}
       else
 	{
-	  
+	  actual->por_dormir--;
+	  nodo = list_next(nodo);
 	}
-      elem = list_next(elem);
     }
 }
 
