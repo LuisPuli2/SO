@@ -71,6 +71,7 @@ static void schedule (void);
 void thread_schedule_tail (struct thread *prev);
 static tid_t allocate_tid (void);
 
+
 /* Initializes the threading system by transforming the code
    that's currently running into a thread.  This can't work in
    general and it is possible in this case only because loader.S
@@ -108,8 +109,7 @@ thread_start (void)
   /* Create the idle thread. */
   struct semaphore idle_started;
   sema_init (&idle_started, 0);
-  thread_create ("idle", PRI_MIN, idle, &idle_started);
-
+thread_create ("idle",PRI_MIN, idle, &idle_started);
   /* Start preemptive thread scheduling. */
   intr_enable ();
 
@@ -122,21 +122,29 @@ thread_start (void)
 void
 thread_tick (void) 
 {
-  struct thread *t = thread_current ();
+struct thread *t = thread_current ();
 
-  /* Update statistics. */
-  if (t == idle_thread)
-    idle_ticks++;
+/* Update statistics. */
+if (t == idle_thread)
+  idle_ticks++;
 #ifdef USERPROG
-  else if (t->pagedir != NULL)
-    user_ticks++;
+ else if (t->pagedir != NULL)
+   user_ticks++;
 #endif
-  else
-    kernel_ticks++;
+ else
+   kernel_ticks++;
 
-  /* Enforce preemption. */
-  if (++thread_ticks >= TIME_SLICE)
-    intr_yield_on_return ();
+/* Enforce preemption. */
+if (++thread_ticks >= TIME_SLICE)
+  intr_yield_on_return ();
+
+/*struct list_elem* nodo;
+nodo = list_begin(&ready_list);
+struct thread* siguiente = list_entry(nodo,struct thread,elem);  
+if((siguiente->priority) > (t->priority))
+  {
+thread_yield(); 
+}*/
 }
 
 /* Prints thread statistics. */
@@ -228,6 +236,18 @@ thread_block (void)
   schedule ();
 }
 
+/* Returns true if value A is less than value B, false
+   otherwise. COPIADO DE src/test/internal/list.c */ 
+bool
+value_max (const struct list_elem *a_,const struct list_elem *b_,
+            void *aux UNUSED) 
+{
+  const struct thread *a = list_entry (a_, struct thread, elem);
+  const struct thread *b = list_entry (b_, struct thread, elem);
+  
+  return (a->priority) < (b->priority);
+} //PRACTICA2
+
 /* Transitions a blocked thread T to the ready-to-run state.
    This is an error if T is not blocked.  (Use thread_yield() to
    make the running thread ready.)
@@ -240,42 +260,44 @@ void
 thread_unblock (struct thread *t) 
 {
   enum intr_level old_level;
-
+  
   ASSERT (is_thread (t));
-
+  
   old_level = intr_disable ();
   ASSERT (t->status == THREAD_BLOCKED);
-  list_push_back (&ready_list, &t->elem);
+  //list_push_back (&ready_list, &t->elem); //ORIGINAL
+  list_insert_ordered(&ready_list,&t->elem,value_max,NULL);
+  //list_sort(&ready_list,value_max,NULL); //PRACTICA2
   t->status = THREAD_READY;
   intr_set_level (old_level);
-}
 
-/* Returns the name of the running thread. */
-const char *
-thread_name (void) 
-{
-  return thread_current ()->name;
 }
-
-/* Returns the running thread.
-   This is running_thread() plus a couple of sanity checks.
-   See the big comment at the top of thread.h for details. */
-struct thread *
-thread_current (void) 
-{
-  struct thread *t = running_thread ();
+  /* Returns the name of the running thread. */
+  const char *
+    thread_name (void) 
+  {
+    return thread_current ()->name;
+  }
   
-  /* Make sure T is really a thread.
-     If either of these assertions fire, then your thread may
-     have overflowed its stack.  Each thread has less than 4 kB
-     of stack, so a few big automatic arrays or moderate
-     recursion can cause stack overflow. */
-  ASSERT (is_thread (t));
-  ASSERT (t->status == THREAD_RUNNING);
-
-  return t;
-}
-
+  /* Returns the running thread.
+     This is running_thread() plus a couple of sanity checks.
+     See the big comment at the top of thread.h for details. */
+  struct thread *
+    thread_current (void) 
+  {
+    struct thread *t = running_thread ();
+    
+    /* Make sure T is really a thread.
+       If either of these assertions fire, then your thread may
+       have overflowed its stack.  Each thread has less than 4 kB
+       of stack, so a few big automatic arrays or moderate
+       recursion can cause stack overflow. */
+    ASSERT (is_thread (t));
+    ASSERT (t->status == THREAD_RUNNING);
+    
+    return t;
+  }
+  
 /* Returns the running thread's tid. */
 tid_t
 thread_tid (void) 
@@ -315,8 +337,11 @@ thread_yield (void)
   ASSERT (!intr_context ());
 
   old_level = intr_disable ();
-  if (cur != idle_thread) 
-    list_push_back (&ready_list, &cur->elem);
+  if (cur != idle_thread)
+    {
+      list_insert_ordered(&ready_list,&cur->elem,value_max,NULL); //PRACTICA2
+      //list_sort(&ready_list,value_max,NULL); //PRACTICA2
+    }
   cur->status = THREAD_READY;
   schedule ();
   intr_set_level (old_level);
@@ -344,6 +369,7 @@ void
 thread_set_priority (int new_priority) 
 {
   thread_current ()->priority = new_priority;
+  thread_yield();
 }
 
 /* Returns the current thread's priority. */
@@ -494,9 +520,13 @@ static struct thread *
 next_thread_to_run (void) 
 {
   if (list_empty (&ready_list))
+    {
     return idle_thread;
+    }
   else
-    return list_entry (list_pop_front (&ready_list), struct thread, elem);
+    {      
+      return list_entry (list_pop_front (&ready_list), struct thread, elem);
+    }      
 }
 
 /* Completes a thread switch by activating the new thread's page
@@ -544,17 +574,6 @@ thread_schedule_tail (struct thread *prev)
       palloc_free_page (prev);
     }
 }
-
-/*void thread_dormir_tiempo(int64_t ticks, int64_t actual, struct list *lista)
-{
-  struct thread *cur = thread_current();
-  printf("%s\n",cur->name);
-  cur -> sleep_time = ticks;
-  cur -> time_actual = actual;
-  list_push_back (&lista, &cur->elem);
-  
-} *///PRACTICA1
-  
 
 /* Schedules a new process.  At entry, interrupts must be off and
    the running process's state must have been changed from
