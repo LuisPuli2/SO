@@ -89,15 +89,6 @@ timer_elapsed (int64_t then)
 
 /* Sleeps for approximately TICKS timer ticks.  Interrupts must
    be turned on. */
-/*void
-timer_sleep (int64_t ticks) 
-{
-  int64_t start = timer_ticks ();
-
-  ASSERT (intr_get_level () == INTR_ON);
-  while (timer_elapsed (start) < ticks) 
-    thread_yield ();
-    }*/
 void
 timer_sleep (int64_t ticks)
 {
@@ -108,7 +99,6 @@ timer_sleep (int64_t ticks)
   (thread_current()->por_dormir) = ticks;
   thread_block();
   intr_set_level(old_level);
-  
   
 } //PRACTICA1
 
@@ -188,17 +178,11 @@ timer_interrupt (struct intr_frame *args UNUSED)
 {
   ticks++;
   thread_tick ();
-  /*
-    1. itero lista
-    2. Reviso que timer_start - timer_ticks >= sleep_time
-    3. libero o no libero.
-   */
   struct list_elem* nodo;  
   for (nodo = list_begin(&dormidos); nodo != list_end(&dormidos); )
     {
       struct thread* actual = list_entry(nodo,struct thread,elem);
-      // printf("%s\n",actual->name);
-      if (actual->por_dormir == 0)
+      if (actual->por_dormir <= 0)
 	{
 	  nodo = list_remove(nodo);
 	  thread_unblock(actual);
