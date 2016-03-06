@@ -137,14 +137,6 @@ if (t == idle_thread)
 /* Enforce preemption. */
 if (++thread_ticks >= TIME_SLICE)
   intr_yield_on_return ();
-
-/*struct list_elem* nodo;
-nodo = list_begin(&ready_list);
-struct thread* siguiente = list_entry(nodo,struct thread,elem);  
-if((siguiente->priority) > (t->priority))
-  {
-thread_yield(); 
-}*/
 }
 
 /* Prints thread statistics. */
@@ -216,9 +208,9 @@ thread_create (const char *name, int priority,
 
   /* Add to run queue. */
   thread_unblock (t);
-
+  thread_yield();
   return tid;
-}
+} 
 
 /* Puts the current thread to sleep.  It will not be scheduled
    again until awoken by thread_unblock().
@@ -242,10 +234,10 @@ bool
 value_max (const struct list_elem *a_,const struct list_elem *b_,
             void *aux UNUSED) 
 {
-  const struct thread *a = list_entry (a_, struct thread, elem);
-  const struct thread *b = list_entry (b_, struct thread, elem);
+  struct thread *a = list_entry (a_, struct thread, elem);
+  struct thread *b = list_entry (b_, struct thread, elem);
   
-  return (a->priority) < (b->priority);
+  return (a->priority) > (b->priority);
 } //PRACTICA2
 
 /* Transitions a blocked thread T to the ready-to-run state.
@@ -265,12 +257,9 @@ thread_unblock (struct thread *t)
   
   old_level = intr_disable ();
   ASSERT (t->status == THREAD_BLOCKED);
-  //list_push_back (&ready_list, &t->elem); //ORIGINAL
   list_insert_ordered(&ready_list,&t->elem,value_max,NULL);
-  //list_sort(&ready_list,value_max,NULL); //PRACTICA2
   t->status = THREAD_READY;
   intr_set_level (old_level);
-
 }
   /* Returns the name of the running thread. */
   const char *
@@ -340,7 +329,6 @@ thread_yield (void)
   if (cur != idle_thread)
     {
       list_insert_ordered(&ready_list,&cur->elem,value_max,NULL); //PRACTICA2
-      //list_sort(&ready_list,value_max,NULL); //PRACTICA2
     }
   cur->status = THREAD_READY;
   schedule ();

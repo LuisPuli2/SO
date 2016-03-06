@@ -186,6 +186,7 @@ timer_interrupt (struct intr_frame *args UNUSED)
 	{
 	  nodo = list_remove(nodo);
 	  thread_unblock(actual);
+	   //thread_yield();
 	}
       else
 	{
