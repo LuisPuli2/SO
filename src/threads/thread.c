@@ -356,7 +356,14 @@ thread_foreach (thread_action_func *func, void *aux)
 void
 thread_set_priority (int new_priority) 
 {
-  thread_current ()->priority = new_priority;
+  if(thread_current() -> priority_donate == -1)
+    {
+      thread_current ()->priority = new_priority;      
+    }
+  else
+    {
+      thread_current() -> priority_donate = new_priority;
+    }
   thread_yield();
 }
 
@@ -482,6 +489,7 @@ init_thread (struct thread *t, const char *name, int priority)
   strlcpy (t->name, name, sizeof t->name);
   t->stack = (uint8_t *) t + PGSIZE;
   t->priority = priority;
+  t->priority_donate = -1;
   t->magic = THREAD_MAGIC;
   list_push_back (&all_list, &t->allelem);
 }
@@ -584,6 +592,11 @@ schedule (void)
   if (cur != next)
     prev = switch_threads (cur, next);
   thread_schedule_tail (prev);
+}
+
+void thread_acomoda_lista(void)
+{
+  list_sort(&ready_list,value_max,NULL);
 }
 
 /* Returns a tid to use for a new thread. */

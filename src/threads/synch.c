@@ -156,7 +156,7 @@ sema_test_helper (void *sema_)
       sema_up (&sema[1]);
     }
 }
-
+
 /* Initializes LOCK.  A lock can be held by at most a single
    thread at any given time.  Our locks are not "recursive", that
    is, it is an error for the thread currently holding a lock to
@@ -195,7 +195,20 @@ lock_acquire (struct lock *lock)
   ASSERT (lock != NULL);
   ASSERT (!intr_context ());
   ASSERT (!lock_held_by_current_thread (lock));
-
+  //PRACTICA03
+  if(lock->holder != NULL)
+    {
+      struct thread *ocupante = lock->holder;
+      struct thread *actual = thread_current();
+      if((ocupante->priority) < (actual->priority))
+	{
+	  ocupante->priority_donate = ocupante -> priority;
+	  ocupante->priority = (actual->priority);
+	  ocupante->lock_heredado = lock;
+	  thread_acomoda_lista();
+	  thread_yield();
+	}
+    }
   sema_down (&lock->semaphore);
   lock->holder = thread_current ();
 }
@@ -227,12 +240,21 @@ lock_try_acquire (struct lock *lock)
    handler. */
 void
 lock_release (struct lock *lock) 
-{
+{  
   ASSERT (lock != NULL);
   ASSERT (lock_held_by_current_thread (lock));
-
-  lock->holder = NULL;
+  //PRACTICA03
+  struct thread *ocupante = lock->holder;
+  struct lock *heredado = (ocupante->lock_heredado);
+  if((ocupante->priority_donate != -1) && (lock == heredado))
+    {
+      ocupante->priority = ocupante->priority_donate;
+      ocupante->priority_donate = -1;
+      thread_acomoda_lista();
+    }
   sema_up (&lock->semaphore);
+  lock->holder = NULL;
+  thread_yield();
 }
 
 /* Returns true if the current thread holds LOCK, false
