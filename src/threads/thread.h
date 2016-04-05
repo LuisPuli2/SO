@@ -88,7 +88,6 @@ struct thread
     char name[16];                      /* Name (for debugging purposes). */
     uint8_t *stack;                     /* Saved stack pointer. */
     int priority;                       /* Priority. */
-    int dormido;                        /* Para decirnos cuanto tiempo debe dormir*/
     struct list_elem allelem;           /* List element for all threads list. */
 
     /* Shared between thread.c and synch.c. */
@@ -138,8 +137,5 @@ int thread_get_nice (void);
 void thread_set_nice (int);
 int thread_get_recent_cpu (void);
 int thread_get_load_avg (void);
-
-/**/
-bool mayor_que(struct list_elem *elemt, struct list_elem *e, void *aux);
 
 #endif /* threads/thread.h */

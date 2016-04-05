@@ -71,15 +71,6 @@ static void schedule (void);
 void thread_schedule_tail (struct thread *prev);
 static tid_t allocate_tid (void);
 
-/*Funcion que decide si un thread es mayor que otro*/
-bool mayor_que(struct list_elem *elemt, struct list_elem *e, void *aux)
-{
-  struct thread *t = list_entry(elemt,struct thread,elem);
-  struct thread *s = list_entry(e, struct thread,elem);
-  return (t -> priority) > (s -> priority);
-}
-
-
 /* Initializes the threading system by transforming the code
    that's currently running into a thread.  This can't work in
    general and it is possible in this case only because loader.S
@@ -254,9 +245,7 @@ thread_unblock (struct thread *t)
 
   old_level = intr_disable ();
   ASSERT (t->status == THREAD_BLOCKED);
-  void *aux;
-  list_insert_ordered (&ready_list,&t->elem,mayor_que,aux);
-  //list_push_back (&ready_list, &t->elem);
+  list_push_back (&ready_list, &t->elem);
   t->status = THREAD_READY;
   intr_set_level (old_level);
 }
@@ -326,10 +315,8 @@ thread_yield (void)
   ASSERT (!intr_context ());
 
   old_level = intr_disable ();
-  if (cur != idle_thread){
-    void *aux;
-    list_insert_ordered(&ready_list,&cur->elem,mayor_que,aux);
-  }
+  if (cur != idle_thread) 
+    list_push_back (&ready_list, &cur->elem);
   cur->status = THREAD_READY;
   schedule ();
   intr_set_level (old_level);
@@ -357,7 +344,6 @@ void
 thread_set_priority (int new_priority) 
 {
   thread_current ()->priority = new_priority;
-  thread_yield();
 }
 
 /* Returns the current thread's priority. */
