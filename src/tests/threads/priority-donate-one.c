@@ -3,6 +3,7 @@
    them to donate their priorities to the main thread.  When the
    main thread releases the lock, the other threads should
    acquire it in priority order.
+
    Based on a test originally submitted for Stanford's CS 140 in
    winter 1999 by Matt Franklin <startled@leland.stanford.edu>,
    Greg Hutchins <gmh@leland.stanford.edu>, Yu Ping Hu

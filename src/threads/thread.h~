@@ -139,7 +139,4 @@ void thread_set_nice (int);
 int thread_get_recent_cpu (void);
 int thread_get_load_avg (void);
 
-/**/
-bool mayor_que(struct list_elem *elemt, struct list_elem *e, void *aux);
-
 #endif /* threads/thread.h */

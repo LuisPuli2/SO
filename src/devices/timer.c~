@@ -30,7 +30,6 @@ static void busy_wait (int64_t loops);
 static void real_time_sleep (int64_t num, int32_t denom);
 static void real_time_delay (int64_t num, int32_t denom);
 
-struct list banquillos;
 /* Sets up the timer to interrupt TIMER_FREQ times per second,
    and registers the corresponding interrupt. */
 void
@@ -38,7 +37,6 @@ timer_init (void)
 {
   pit_configure_channel (0, 2, TIMER_FREQ);
   intr_register_ext (0x20, timer_interrupt, "8254 Timer");
-  list_init(&banquillos);
 }
 
 /* Calibrates loops_per_tick, used to implement brief delays. */
@@ -91,19 +89,11 @@ timer_elapsed (int64_t then)
 void
 timer_sleep (int64_t ticks) 
 {
-  //int64_t start = timer_ticks ();
+  int64_t start = timer_ticks ();
 
   ASSERT (intr_get_level () == INTR_ON);
-
-  struct thread *t;            //Creamos una referencia de thread.
-  enum intr_level old_level;   //Para guardar el estado de las interr.
-  old_level = intr_disable();  //Detenemos las interrupciones.
-  t = thread_current();        //Obtenemos el thread corriendo.
-  t -> dormido = ticks;        //Fijamos la variable dormido = ticks
-  list_push_back(&banquillos, &(t -> elem)); // Lo ingresamos a los banquillos
-  thread_block();              //Bloqueamos al thread.
-  intr_set_level (old_level);  //Activamos las interrupciones.
-  
+  while (timer_elapsed (start) < ticks) 
+    thread_yield ();
 }
 
 /* Sleeps for approximately MS milliseconds.  Interrupts must be
@@ -182,19 +172,6 @@ timer_interrupt (struct intr_frame *args UNUSED)
 {
   ticks++;
   thread_tick ();
-  struct list_elem *e; //Creamos un apuntador de list_elem.
-  struct thread *t;   //Creamos un apuntador de threads.
-  for(e = list_begin(&banquillos); e != list_end (&banquillos);)
-  {
-    t = list_entry(e, struct thread, elem);
-    if(t -> dormido <= 0){
-      e = list_remove(e);
-      thread_unblock(t);
-    }else{
-      t->dormido--;
-      e = list_next(e);
-    }
-  }
 }
 
 /* Returns true if LOOPS iterations waits for more than one timer
